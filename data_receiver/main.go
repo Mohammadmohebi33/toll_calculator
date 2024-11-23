@@ -1,50 +1,37 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/Mohammadmohebi33/toll_calculator/types"
-	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
 	"github.com/gorilla/websocket"
 	"log"
 	"net/http"
 )
 
-var kafkaTopic = "obudata"
-
 func main() {
-
 	recv, _ := NewDataReceiver()
 	http.HandleFunc("/ws", recv.wsHandler)
-	http.ListenAndServe(":8080", nil)
-
+	http.ListenAndServe(":8081", nil)
 }
 
 type DataReceiver struct {
 	msg  chan types.OBUData
 	conn *websocket.Conn
-	prod *kafka.Producer
+	prod DataProducer
 }
 
 func NewDataReceiver() (*DataReceiver, error) {
-	p, err := kafka.NewProducer(&kafka.ConfigMap{"bootstrap.servers": "localhost"})
+	var (
+		p          DataProducer
+		err        error
+		kafkaTopic = "obudata"
+	)
+
+	p, err = NewKafkaProducer(kafkaTopic)
 	if err != nil {
 		return nil, err
 	}
-
-	// Delivery report handler for produced messages
-	go func() {
-		for e := range p.Events() {
-			switch ev := e.(type) {
-			case *kafka.Message:
-				if ev.TopicPartition.Error != nil {
-					fmt.Printf("Delivery failed: %v\n", ev.TopicPartition)
-				} else {
-					fmt.Printf("Delivered message to %v\n", ev.TopicPartition)
-				}
-			}
-		}
-	}()
+	p = NewLogMiddleware(p)
 	return &DataReceiver{
 		msg:  make(chan types.OBUData, 128),
 		prod: p,
@@ -52,19 +39,7 @@ func NewDataReceiver() (*DataReceiver, error) {
 }
 
 func (dr *DataReceiver) produceData(data types.OBUData) error {
-	b, err := json.Marshal(data)
-	if err != nil {
-		return err
-	}
-
-	// Produce messages to topic (asynchronously)
-	topic := kafkaTopic
-	err = dr.prod.Produce(&kafka.Message{
-		TopicPartition: kafka.TopicPartition{Topic: &topic, Partition: kafka.PartitionAny},
-		Value:          b,
-	}, nil)
-
-	return err
+	return dr.prod.ProduceData(data)
 }
 
 func (dr DataReceiver) wsHandler(w http.ResponseWriter, r *http.Request) {
@@ -90,7 +65,6 @@ func (dr DataReceiver) wsReceiverLoop() {
 			continue
 		}
 
-		fmt.Println("data receive :", data)
 		if err := dr.produceData(data); err != nil {
 			log.Println("produce error", err)
 		}
