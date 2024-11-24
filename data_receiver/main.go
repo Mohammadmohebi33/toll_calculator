@@ -2,10 +2,11 @@ package main
 
 import (
 	"fmt"
-	"github.com/Mohammadmohebi33/toll_calculator/types"
-	"github.com/gorilla/websocket"
 	"log"
 	"net/http"
+
+	"github.com/Mohammadmohebi33/toll_calculator/types"
+	"github.com/gorilla/websocket"
 )
 
 func main() {
