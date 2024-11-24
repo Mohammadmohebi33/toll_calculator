@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/Mohammadmohebi33/toll_calculator/types"
 	"net/http"
+	"strconv"
 )
 
 func main() {
@@ -21,11 +22,34 @@ func main() {
 
 func makeHttpTrnsport(listenAddr string, svc Aggregator) {
 	fmt.Println("Http Transport start :", listenAddr)
-	http.HandleFunc("/aggregate", HandleAggregate(svc))
+	http.HandleFunc("/aggregate", handleAggregate(svc))
+	http.HandleFunc("/invoice", handleGetInvoice(svc))
 	http.ListenAndServe(listenAddr, nil)
 }
 
-func HandleAggregate(svc Aggregator) http.HandlerFunc {
+func handleGetInvoice(svc Aggregator) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		value, ok := r.URL.Query()["obu"]
+		if !ok {
+			writeJson(w, http.StatusBadRequest, map[string]string{"error": "missing obu id"})
+			return
+		}
+		obuID, err := strconv.Atoi(value[0])
+		if err != nil {
+			writeJson(w, http.StatusBadRequest, map[string]string{"error": "invalid obu id"})
+			return
+		}
+
+		invoice, err := svc.CalculateInvoice(obuID)
+		if err != nil {
+			writeJson(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+			return
+		}
+		writeJson(w, http.StatusOK, invoice)
+	}
+}
+
+func handleAggregate(svc Aggregator) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var distance types.Distance
 		if err := json.NewDecoder(r.Body).Decode(&distance); err != nil {
