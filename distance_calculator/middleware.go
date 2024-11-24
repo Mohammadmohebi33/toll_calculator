@@ -10,7 +10,7 @@ type LogMiddleware struct {
 	next CalculatorServicer
 }
 
-func NewLogMiddleware(next CalculatorServicer) *LogMiddleware {
+func NewLogMiddleware(next CalculatorServicer) CalculatorServicer {
 	return &LogMiddleware{next: next}
 }
 

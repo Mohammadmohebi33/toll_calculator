@@ -14,6 +14,7 @@ func main() {
 
 	store := NewMemoryStore()
 	svc := NewInvoiceAggregator(store)
+	svc = NewLogMiddleware(svc)
 
 	makeHttpTrnsport(*listenAddr, svc)
 }
