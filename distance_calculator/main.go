@@ -12,6 +12,7 @@ func main() {
 	)
 
 	svc = NewCalculatorService()
+	svc = NewLogMiddleware(svc)
 
 	consumer, err := NewKafkaConsumer(KafkaTopic, svc)
 	if err != nil {
