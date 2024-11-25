@@ -15,7 +15,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	if _, err := c.Aggregate(context.Background(), &types.AggregateRequest{
+	if err := c.Aggregate(context.Background(), &types.AggregateRequest{
 		ObuID: 1,
 		Value: 60.1,
 		Unix:  time.Now().UnixNano(),

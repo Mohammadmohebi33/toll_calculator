@@ -6,7 +6,8 @@ import (
 )
 
 var KafkaTopic = "obudata"
-var EndPorint = "http://localhost:8080/aggregate"
+var HttpEndPoint = "http://localhost:8080/aggregate"
+var GrpcEndPoint = ":8081"
 
 func main() {
 
@@ -18,7 +19,12 @@ func main() {
 	svc = NewCalculatorService()
 	svc = NewLogMiddleware(svc)
 
-	consumer, err := NewKafkaConsumer(KafkaTopic, svc, client.NewClient(EndPorint))
+	grpcClient, err := client.NewGRPCClient(GrpcEndPoint)
+	if err != nil {
+		log.Fatalf("failed to create gRPC client: %v", err)
+	}
+
+	consumer, err := NewKafkaConsumer(KafkaTopic, svc, grpcClient)
 	if err != nil {
 		log.Fatal(err)
 	}
