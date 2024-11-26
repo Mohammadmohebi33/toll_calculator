@@ -13,8 +13,8 @@ import (
 
 func main() {
 
-	httpListenAddr := flag.String("httpAddr", ":8080", "Listen address")
-	grpcListenAddr := flag.String("grpcAddr", ":8081", "Listen address")
+	httpListenAddr := flag.String("httpAddr", ":3000", "Listen address")
+	grpcListenAddr := flag.String("grpcAddr", ":8089", "Listen address")
 
 	store := NewMemoryStore()
 	svc := NewInvoiceAggregator(store)

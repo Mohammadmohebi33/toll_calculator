@@ -1,8 +1,8 @@
 package main
 
 import (
-	"fmt"
 	"github.com/Mohammadmohebi33/toll_calculator/types"
+	"github.com/sirupsen/logrus"
 )
 
 const bestPrice = 3.15
@@ -28,7 +28,11 @@ func NewInvoiceAggregator(store Storer) Aggregator {
 }
 
 func (a *InvoiceAggregator) AggregateDistance(distance types.Distance) error {
-	fmt.Println("processing and inserting distance in the storage: ", distance)
+	logrus.WithFields(logrus.Fields{
+		"obuid":    distance.OBUID,
+		"distance": distance.Value,
+		"unix":     distance.Unix,
+	}).Info("aggregate invoice")
 	return a.store.Insert(distance)
 }
 

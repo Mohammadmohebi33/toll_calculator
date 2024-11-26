@@ -5,54 +5,53 @@ import (
 	"github.com/Mohammadmohebi33/toll_calculator/types"
 	"github.com/gorilla/websocket"
 	"log"
-	"math"
 	"math/rand"
 	"time"
 )
 
-const wsEndpoint = "ws://127.0.0.1:8081/ws"
+const wsEndpoint = "ws://127.0.0.1:5000/ws"
 
-var sendInterval = time.Second * 60
+var sendInterval = time.Second * 30
 
-func genLocation() (float64, float64) {
+func genLatLong() (float64, float64) {
 	return genCoord(), genCoord()
 }
 
 func genCoord() float64 {
 	n := float64(rand.Intn(100) + 1)
 	f := rand.Float64()
-	return f + n
-}
-
-func generateOBUSIDS(n int) []int {
-	ids := make([]int, n)
-	for i := 0; i < n; i++ {
-		ids[i] = rand.Intn(math.MaxInt)
-	}
-	return ids
+	return n + f
 }
 
 func main() {
-	obuIDs := generateOBUSIDS(1)
+	obuIDS := generateOBUIDS(1)
 	conn, _, err := websocket.DefaultDialer.Dial(wsEndpoint, nil)
 	if err != nil {
-		log.Fatal("dial:", err)
+		log.Fatal(err)
 	}
 	for {
-		for i := 0; i < len(obuIDs); i++ {
-			lat, long := genLocation()
+		for i := 0; i < len(obuIDS); i++ {
+			lat, long := genLatLong()
 			data := types.OBUData{
-				OBUID: obuIDs[i],
+				OBUID: obuIDS[i],
 				Lat:   lat,
 				Long:  long,
 			}
 			if err := conn.WriteJSON(data); err != nil {
-				log.Println("write:", err)
+				log.Fatal(err)
 			}
-			fmt.Println(data.OBUID, data.Lat, data.Long)
+			fmt.Println(data)
 		}
 		time.Sleep(sendInterval)
 	}
+}
+
+func generateOBUIDS(n int) []int {
+	ids := make([]int, n)
+	for i := 0; i < n; i++ {
+		ids[i] = rand.Intn(999999)
+	}
+	return ids
 }
 
 func init() {
