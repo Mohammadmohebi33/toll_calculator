@@ -5,8 +5,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/Mohammadmohebi33/toll_calculator/types"
+	"github.com/sirupsen/logrus"
 	"net/http"
+
+	"github.com/Mohammadmohebi33/toll_calculator/types"
 )
 
 type HttpClient struct {
@@ -19,13 +21,13 @@ func NewHttpClient(endpoint string) *HttpClient {
 	}
 }
 
-func (receiver *HttpClient) Aggregate(ctx context.Context, request *types.AggregateRequest) error {
+func (c *HttpClient) Aggregate(ctx context.Context, request *types.AggregateRequest) error {
 	b, err := json.Marshal(request)
 	if err != nil {
 		return err
 	}
 
-	req, err := http.NewRequest("POST", receiver.Endpoint, bytes.NewBuffer(b))
+	req, err := http.NewRequest("POST", c.Endpoint+"/aggregate", bytes.NewBuffer(b))
 	if err != nil {
 		return err
 	}
@@ -40,4 +42,33 @@ func (receiver *HttpClient) Aggregate(ctx context.Context, request *types.Aggreg
 	}
 
 	return nil
+}
+
+func (c *HttpClient) GetInvoice(ctx context.Context, id int) (*types.Invoice, error) {
+	invReq := types.GetInvoiceRequest{
+		ObuID: int32(id),
+	}
+	b, err := json.Marshal(&invReq)
+	if err != nil {
+		return nil, err
+	}
+	endpoint := fmt.Sprintf("%s/%s?obu=%d", c.Endpoint, "invoice", id)
+	logrus.Infof("requesting get invoice -> %s", endpoint)
+	req, err := http.NewRequest("POST", endpoint, bytes.NewReader(b))
+	if err != nil {
+		return nil, err
+	}
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("the service responded with non 200 status code %d", resp.StatusCode)
+	}
+	var inv types.Invoice
+	if err := json.NewDecoder(resp.Body).Decode(&inv); err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	return &inv, nil
 }

@@ -12,7 +12,7 @@ import (
 func main() {
 	recv, _ := NewDataReceiver()
 	http.HandleFunc("/ws", recv.wsHandler)
-	http.ListenAndServe(":8081", nil)
+	http.ListenAndServe(":5000", nil)
 }
 
 type DataReceiver struct {
